@@ -1,53 +1,120 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Hello World lambda
+  Automate management task for Jumpcloud
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 3
 
+Parameters:
+  JcServiceApiKey:
+    Description: The Jumpcloud service user API key
+    Type: String
+    NoEcho: true
+  Schedule:
+    Description: Schedule to execute this lambda
+    Type: String
+    Default: rate(30 days)
+    ConstraintDescription: "Use schedule format: https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.htm"
 Resources:
-  HelloWorldFunction:
+  CleanFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
-      Handler: app.lambda_handler
-      Runtime: python3.6
       Role: !GetAtt FunctionRole.Arn
+      Runtime: python3.6
+      CodeUri: jumpcloud/
+      Handler: clean.lambda_handler
       Events:
-        HelloWorld:
+        CleanJumpcloudSystemsSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref Schedule
+        CleanApi:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /clean
             Method: get
-
-  FunctionRole:   # execute lambda function with this role
-    Type: AWS::IAM::Role
+      Environment:
+        Variables:
+          JC_SERVICE_API_KEY: !Ref JcServiceApiKey
+  FunctionRole:
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
-              Service:
-                - lambda.amazonaws.com
+              Service: lambda.amazonaws.com
             Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: PublishToCloudwatch
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+        - PolicyName: SendEmails
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: "*"
+        - PolicyName: PublishSnsTopic
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !ImportValue us-east-1-AccountAlertTopics-SNSAlertsInfoArn
+  FunctionFailureAlarm:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      ActionsEnabled: true
+      AlarmActions:
+        - !ImportValue us-east-1-AccountAlertTopics-SNSAlertsErrorArn
+      MetricName: !Sub "${LambdaFunction}-FailureAlarm"
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref CleanFunction
+      EvaluationPeriods: 1
+      Namespace: AWS/Lambda
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
 Outputs:
+  CleanFunction:
+    Description: "Clean Lambda Function name"
+    Value: !Ref CleanFunction
+    Export:
+      Name: !Sub '${AWS::Region}-${AWS::StackName}-CleanFunction'
+  CleanFunctionArn:
+    Description: "Clean Lambda Function ARN"
+    Value: !GetAtt CleanFunction.Arn
+    Export:
+      Name: !Sub '${AWS::Region}-${AWS::StackName}-CleanFunctionArn'
+  FunctionRoleArn:
+    Description: "Implicit IAM Role created for clean function"
+    Value: !GetAtt FunctionRole.Arn
+    Export:
+      Name: !Sub '${AWS::Region}-${AWS::StackName}-FunctionRoleArn'
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunctionArn:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionRoleArn:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt FunctionRole.Arn
+  CleanApi:
+    Description: "API Gateway endpoint URL for Prod stage for clean function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/clean/"
+    Export:
+      Name: !Sub '${AWS::Region}-${AWS::StackName}-CleanApi'

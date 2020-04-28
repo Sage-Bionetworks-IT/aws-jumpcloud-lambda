@@ -1,12 +1,5 @@
-# lambda-template
-Template for creating lambda repositories
-A template for quickly starting a new AWS lambda project.
-
-## Naming
-Naming conventions:
-* for a vanilla Lambda: `lambda-<context>`
-* for a Cloudformation Transform macro: `cfn-transform-<context>`
-* for a Cloudformation Custom Resource: `cfn-cr-<context>`
+# aws-jumpcloud-lambda
+A lambda to help manage Jumpcloud IDP
 
 ## Development
 
@@ -81,7 +74,3 @@ Install the lambda using sceptre:
 ```bash script
 sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/my-lambda
 ```
-
-## Author
-
-Your Name Here.
