@@ -84,7 +84,7 @@ Resources:
       ActionsEnabled: true
       AlarmActions:
         - !ImportValue us-east-1-AccountAlertTopics-SNSAlertsErrorArn
-      MetricName: !Sub "${LambdaFunction}-FailureAlarm"
+      MetricName: !Sub "${CleanFunction}-FailureAlarm"
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName

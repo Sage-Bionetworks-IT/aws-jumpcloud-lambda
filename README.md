@@ -51,7 +51,7 @@ sam package --template-file .aws-sam/build/template.yaml \
   --s3-bucket essentials-awss3lambdaartifactsbucket-x29ftznj6pqw \
   --output-template-file .aws-sam/build/lambda-template.yaml
 
-aws s3 cp .aws-sam/build/template.yaml s3://bootstrap-awss3cloudformationbucket-19qromfd235z9/my-lambda-repo/master
+aws s3 cp .aws-sam/build/template.yaml s3://bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-jumpcloud/master
 ```
 
 ## Install Lambda into AWS
@@ -67,7 +67,7 @@ stack_tags:
   OwnerEmail: "it@sagebase.org"
 hooks:
   before_launch:
-    - !cmd "curl https://s3.amazonaws.com/essentials-awss3lambdaartifactsbucket-x29ftznj6pqw/my-lambda-repo/master/lambda-template.yaml --create-dirs -o templates/remote/lambda-template.yaml"
+    - !cmd "curl https://s3.amazonaws.com/essentials-awss3lambdaartifactsbucket-x29ftznj6pqw/lambda-jumpcloud/master/lambda-template.yaml --create-dirs -o templates/remote/lambda-template.yaml"
 ```
 
 Install the lambda using sceptre:
