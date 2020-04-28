@@ -16,21 +16,21 @@ the [pre-commit](https://pre-commit.com/) git hook.
 
 ### Create a local build
 
-```bash
+```shell script
 $ sam build --use-container
 ```
 
 ### Run locally
 
-```bash
-$ sam local invoke HelloWorldFunction --event events/event.json
+```shell script
+$ sam local invoke CleanFunction --event events/event.json
 ```
 
 ### Run unit tests
 Tests are defined in the `tests` folder in this project. Use PIP to install the
 [pytest](https://docs.pytest.org/en/latest/) and run unit tests.
 
-```bash
+```shell script
 $ python -m pytest tests/ -v
 ```
 
@@ -44,7 +44,7 @@ sam build
 
 ## Deploy Lambda to S3
 This requires the correct permissions to upload to bucket
-`bootstrap-awss3cloudformationbucket-19qromfd235z9`.
+`bootstrap-awss3cloudformationbucket-19qromfd235z9` and `essentials-awss3lambdaartifactsbucket-x29ftznj6pqw`
 
 ```shell script
 sam package --template-file .aws-sam/build/template.yaml \
@@ -60,17 +60,17 @@ Create the following [sceptre](https://github.com/Sceptre/sceptre) file
 config/prod/lambda-jumpcloud.yaml
 ```yaml
 template_path: "remote/lambda-jumpcloud.yaml"
-stack_name: "my-lambda"
+stack_name: "lambda-jumpcloud"
 stack_tags:
   Department: "Platform"
   Project: "Infrastructure"
   OwnerEmail: "it@sagebase.org"
 hooks:
   before_launch:
-    - !cmd "curl https://s3.amazonaws.com/essentials-awss3lambdaartifactsbucket-x29ftznj6pqw/lambda-jumpcloud/master/lambda-jumpcloud.yaml --create-dirs -o templates/remote/lambda-jumpcloud.yaml"
+    - !cmd "curl https://s3.amazonaws.com/bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-jumpcloud/master/lambda-jumpcloud.yaml --create-dirs -o templates/remote/lambda-jumpcloud.yaml"
 ```
 
 Install the lambda using sceptre:
-```bash script
+```shell script
 sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/lambda-jumpcloud.yaml
 ```
