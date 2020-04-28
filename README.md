@@ -49,17 +49,17 @@ This requires the correct permissions to upload to bucket
 ```shell script
 sam package --template-file .aws-sam/build/template.yaml \
   --s3-bucket essentials-awss3lambdaartifactsbucket-x29ftznj6pqw \
-  --output-template-file .aws-sam/build/lambda-template.yaml
+  --output-template-file .aws-sam/build/lambda-jumpcloud.yaml
 
-aws s3 cp .aws-sam/build/template.yaml s3://bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-jumpcloud/master
+aws s3 cp .aws-sam/build/lambda-jumpcloud.yaml s3://bootstrap-awss3cloudformationbucket-19qromfd235z9/lambda-jumpcloud/master/
 ```
 
 ## Install Lambda into AWS
 Create the following [sceptre](https://github.com/Sceptre/sceptre) file
 
-config/prod/lambda-template.yaml
+config/prod/lambda-jumpcloud.yaml
 ```yaml
-template_path: "remote/lambda-template.yaml"
+template_path: "remote/lambda-jumpcloud.yaml"
 stack_name: "my-lambda"
 stack_tags:
   Department: "Platform"
@@ -67,10 +67,10 @@ stack_tags:
   OwnerEmail: "it@sagebase.org"
 hooks:
   before_launch:
-    - !cmd "curl https://s3.amazonaws.com/essentials-awss3lambdaartifactsbucket-x29ftznj6pqw/lambda-jumpcloud/master/lambda-template.yaml --create-dirs -o templates/remote/lambda-template.yaml"
+    - !cmd "curl https://s3.amazonaws.com/essentials-awss3lambdaartifactsbucket-x29ftznj6pqw/lambda-jumpcloud/master/lambda-jumpcloud.yaml --create-dirs -o templates/remote/lambda-jumpcloud.yaml"
 ```
 
 Install the lambda using sceptre:
 ```bash script
-sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/my-lambda
+sceptre --var "profile=my-profile" --var "region=us-east-1" launch prod/lambda-jumpcloud.yaml
 ```
